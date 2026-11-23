@@ -1,67 +1,107 @@
-from PIL import Image
-import easyocr
-from selenium import webdriver
-from selenium.webdriver.common.by import By
+async function playWarningSound() {
+  const message = document.getElementById("message");
 
-from maker import wd
+  message.textContent = "⚠️ 診断番号が違います！";
 
-print("EasyOCR起動")
+  const ctx = new AudioContext();
+  await ctx.resume();
 
-img = Image.open('photos/hdd.png')
+  document.body.classList.add("scan-error-blink");
 
-img = img.resize(
-    (img.width * 2, img.height * 2)
-)
+  for (let i = 0; i < 3; i++) {
+    const osc = ctx.createOscillator();
 
-img.save('photos/hdd_big.png')
+    osc.frequency.value = 880;
+    osc.connect(ctx.destination);
 
-reader = easyocr.Reader(['en'])
+    const startTime = ctx.currentTime + i * 0.7;
 
-result = reader.readtext(
-    'photos/hdd_big.png',
-    detail=1
-)
+    osc.start(startTime);
+    osc.stop(startTime + 0.3);
+  }
 
-print("===== OCR結果 =====")
-
-for box, txt, conf in result:
-    print(f"{txt} ({conf:.2f})")
-
-text = " ".join([r[1] for r in result]).upper()
-
-print("結合後:")
-print(text)
-
-if "WD BLUE" in text or "WESTERN DIGITAL" in text:
-    data = wd.run(text)
-else:
-    print("メーカー不明")
-
-driver = webdriver.Chrome()
-
-driver.get("https://demoqa.com/text-box")
-
-driver.find_element(
-    By.ID,
-    "userName"
-).send_keys(data["model"])
-
-driver.find_element(
-    By.ID,
-    "userEmail"
-).send_keys(data["model1"])
-
-driver.find_element(
-    By.ID,
-    "currentAddress"
-).send_keys(data["serial"])
-
-driver.find_element(
-    By.ID,
-    "permanentAddress"
-).send_keys(data["dcm"])
+  setTimeout(() => {
+    document.body.classList.remove("scan-error-blink");
+    message.textContent = "";
+    ctx.close();
+  }, 3000);
+}
 
 
 
-input("Enterを押したら終了")
-driver.quit()
+
+
+if (!item) {
+  showWarning(`この案件のシールではありません: ${code}`);
+  playWarningSound();
+  return;
+}
+
+
+
+
+
+.scan-error-blink {
+  animation: scan-error-blink-animation 0.3s infinite;
+}
+
+{% endblock %}
+
+{% block style %}
+.pick-page { max-width: 1100px; margin: 0 auto; padding-top: 4px; }
+.pick-layout {
+  display: grid;
+  grid-template-columns: minmax(340px, 460px) 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.pick-col { min-width: 0; }
+
+@media (max-width: 980px) {
+  .pick-layout { grid-template-columns: 1fr; }
+}
+
+.reason-panel {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 12px;
+  background: #fff;
+}
+.reason-title { font-weight: 700; margin-bottom: 10px; font-size: 15px; }
+.reason-warning {
+  min-height: 20px;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #c0392b;
+}
+.reason-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.reason-list .reason-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 13px 14px;
+  cursor: pointer;
+  font-size: 15px;
+}
+.reason-list .reason-item:hover { background: var(--orange-light); }
+.reason-list .reason-item.selected { background: var(--orange-light); border-color: var(--orange-dark); }
+.reason-list .reason-code { font-weight: 700; margin-right: 8px; color: var(--ink-3); }
+.reason-selected { padding: 10px 12px; background: var(--orange-light); border-radius: 8px; margin-bottom: 10px; font-size: 15px; }
+.reason-actions { display: flex; gap: 8px; }
+.reason-actions .btn { flex: 1; height: 52px; font-size: 15px; }
+
+/* スキャン間違い時の画面点滅 */
+.scan-error-blink {
+  animation: scan-error-blink-animation 0.3s infinite;
+}
+
+@keyframes scan-error-blink-animation {
+  0%, 100% {
+    background-color: white;
+  }
+  50% {
+    background-color: red;
+  }
+}
+{% endblock %}
